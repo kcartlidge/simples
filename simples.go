@@ -1,11 +1,15 @@
 package simples
 
-import "os"
-import "strings"
+import (
+	"os"
+	"strconv"
+	"strings"
+)
 
 // Config ... Provider of configuration settings.
 type Config interface {
 	Get(key string, defaultValue string) string
+	GetNumber(key string, defaultValue int) int
 }
 
 type config struct {
@@ -27,15 +31,27 @@ func (c config) Get(key string, defaultValue string) string {
 	k := strings.ToUpper(key)
 
 	// Check the environment variables.
-	v, ok := os.LookupEnv(k)
-	if ok {
-		return v
+	for _, e := range os.Environ() {
+		kv := strings.Split(e, "=")
+		if strings.ToUpper(kv[0]) == k {
+			return kv[1]
+		}
 	}
 
 	// Check the file values.
-	v, ok = c.Settings[k]
+	v, ok := c.Settings[k]
 	if ok {
 		return v
 	}
 	return defaultValue
+}
+
+// GetNumber ... Returns a matching value, or the defaultValue if not found.
+func (c config) GetNumber(key string, defaultValue int) int {
+	v := c.Get(key, strconv.Itoa(defaultValue))
+	iv, err := strconv.Atoi(v)
+	if err != nil {
+		return defaultValue
+	}
+	return iv
 }
