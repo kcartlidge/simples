@@ -1,16 +1,16 @@
 # Simples-Config
 
-An extremely easy to use configuration loader that
+An easy to use configuration loader that
 follows simple priority rules for each setting.
 
 1. Environment variables take priority.
 2. Check a specified config file next.
-3. Drop back to a specified default.
+3. Drop back to a coded default.
 
 ## How to use it.
 
-The idea is that you should be specific about things
-that must change for your running environment, but
+The idea is that you should be exact about things
+that must change for a named environment, but
 also degrade to more general defaults whose values
 are shared across multiple environments.
 
@@ -18,9 +18,17 @@ For example your database connection strings and secret
 keys might be in environment variables in your cloud,
 whereas a standard list page size could be in a config
 file (for all environments) which is then overridden by
-an environment variable if needed.
+a more specific value in an environment variable if needed.
 
-### Code example.
+## Code example.
+
+Install the package first:
+
+``` sh
+go get github.com/kcartlidge/simples-config
+```
+
+Then use like this:
 
 ``` go
 package main
@@ -42,6 +50,11 @@ func main() {
     fmt.Println("Page Size:", valueAsNumber)
 }
 ```
+
+Getting a value will always fall back to the default
+if a real value cannot be found (or ```getNumber```
+cannot convert that value to a number). Therefore
+there is no need to check for errors.
 
 ## Configuration file format.
 
@@ -71,6 +84,66 @@ include *equals* too.
 Lining up (as per the example above) is entirely
 optional, as are comments - which are lines that
 start with a hash symbol.
+
+## Environment variables.
+
+Standard stuff. If you provide one, it overrides
+any loaded configuration file value with the same
+name (case insensitive).
+
+``` sh
+export PROJECT_TITLE=Website
+```
+
+## Methods available.
+
+### CreateConfig
+
+``` go
+CreateConfig(filename string) (Config, error)
+```
+
+This reads in the given filename and caches all
+settings found. It returns an error if the
+file could not be loaded. Any lines that are
+not key/value pairs are ignored.
+
+The main return object is a ```Config``` which
+has the following methods available on it.
+
+### Get
+
+``` go
+Get(key string, defaultValue string) string
+```
+
+This returns the given key's value from the
+environment variable if it exists. Otherwise
+it will return from the loaded configuration
+file or drop back to returning the default.
+
+### GetNumber
+
+``` go
+GetNumber(key string, defaultValue int) int
+```
+
+This works the same as ```Get``` but expects
+to find a number value. If the value is not
+convertible to a number, the default is
+returned.
+
+*Note that by number I mean an integer, so
+whole numbers only.*
+
+## Fetching and running tests.
+
+Simply fetch the package and run as usual:
+
+``` sh
+go get github.com/kcartlidge/simples-config
+go test
+```
 
 ## Performance and cacheing.
 
