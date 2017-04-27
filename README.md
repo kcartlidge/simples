@@ -34,12 +34,16 @@ Then use like this:
 package main
 
 import (
+    "log"
     simples "github.com/kcartlidge/simples-config"
 )
 
 func main() {
     // Create a config object from an env file.
-    c := simples.CreateConfig('.env')
+    c, err := simples.CreateConfig(".env")
+    if err != nil {
+	    log.Fatalln(err.Error())
+    }
 
     // Extract the values (with defaults).
     valueAsString := c.Get("PROJECT_TITLE", "Unnamed Project")
