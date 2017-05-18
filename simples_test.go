@@ -123,3 +123,16 @@ func Test_GetNumber_Exists_ReturnsValue(t *testing.T) {
 		t.Error("Expected 10, got ", v)
 	}
 }
+
+func Test_WhenDisabled_EnvironmentDoesNotOverrideFile(t *testing.T) {
+	defer setup()()
+	os.Setenv(pageSize, "[should be ignored]")
+
+	c, _ := CreateConfig(filename)
+	c.SetAllowEnvironmentOverrides(false)
+	v := c.Get(pageSize, "default")
+
+	if v != "10" {
+		t.Error("Expected 10, got ", v)
+	}
+}

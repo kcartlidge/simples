@@ -10,15 +10,20 @@ import (
 type Config interface {
 	Get(key string, defaultValue string) string
 	GetNumber(key string, defaultValue int) int
+	SetAllowEnvironmentOverrides(allow bool)
 }
 
 type config struct {
-	Settings map[string]string
+	// allowEnvironmentOverrides ... Set to false (default is true) to disable environment overrides.
+	allowEnvironmentOverrides bool
+	Settings                  map[string]string
 }
 
 // CreateConfig ... Initialises the config, loading from a file if it exists.
 func CreateConfig(filename string) (Config, error) {
-	c := config{}
+	c := &config{
+		allowEnvironmentOverrides: true,
+	}
 	s, err := loadKeyValues(filename)
 	if err == nil {
 		c.Settings = s
@@ -27,14 +32,16 @@ func CreateConfig(filename string) (Config, error) {
 }
 
 // Get ... Returns a matching value, or the defaultValue if not found.
-func (c config) Get(key string, defaultValue string) string {
+func (c *config) Get(key string, defaultValue string) string {
 	k := strings.ToUpper(key)
 
 	// Check the environment variables.
-	for _, e := range os.Environ() {
-		kv := strings.Split(e, "=")
-		if strings.ToUpper(kv[0]) == k {
-			return kv[1]
+	if c.allowEnvironmentOverrides {
+		for _, e := range os.Environ() {
+			kv := strings.Split(e, "=")
+			if strings.ToUpper(kv[0]) == k {
+				return kv[1]
+			}
 		}
 	}
 
@@ -47,11 +54,16 @@ func (c config) Get(key string, defaultValue string) string {
 }
 
 // GetNumber ... Returns a matching value, or the defaultValue if not found.
-func (c config) GetNumber(key string, defaultValue int) int {
+func (c *config) GetNumber(key string, defaultValue int) int {
 	v := c.Get(key, strconv.Itoa(defaultValue))
 	iv, err := strconv.Atoi(v)
 	if err != nil {
 		return defaultValue
 	}
 	return iv
+}
+
+// SetAllowEnvironmentOverrides ... False (default is true) disables environment variable overrides.
+func (c *config) SetAllowEnvironmentOverrides(allow bool) {
+	c.allowEnvironmentOverrides = allow
 }
