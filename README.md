@@ -140,7 +140,9 @@ Returns a slice with the names of all known sections. Useful for keying into sec
 GetSection(section string)  map[int]Entry
 ```
 
-Returns a slice with all known sections. Useful for keying into sections dynamically. Each entry has it's own sequence within in, which matches the sequence in the original ```ini```file. Items are also indexed by their sequence, and so should always be accessed similar to:
+Returns a single section's entries, keyed by sequence (1-based).
+
+Each entry has it's own sequence within it, and these sequences match the ordering in the original ```ini``` file. As items are keyed by their sequence, they should be accessed like this:
 
 ``` go
 cnt := len(m)
@@ -150,7 +152,7 @@ for i := 1; i <= cnt; i++ {
 }
 ```
 
-In Go simply iterating over the collection *does not* result in a guaranteed order.
+In Go simply iterating over the map *does not* guarantee the order, whereas keying does.
 
 ## Fetching and running tests
 
