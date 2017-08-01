@@ -12,10 +12,6 @@ const (
 	validFilename      = "fixtures/valid.ini"
 )
 
-// Need tests for:
-//
-//   Multiple equals symbols
-
 // CreateConfig
 
 func Test_CreateConfig_WithMissingFile_ReturnsError(t *testing.T) {
