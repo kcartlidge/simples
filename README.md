@@ -1,27 +1,27 @@
-# Simples-Config
+# Simples-Config v1.0.0
 
-An easy to use configuration loader that
-follows simple priority rules for each setting.
+An easy to use configuration loader that understands sections of settings in an ```ini``` style format:
 
-1. Environment variables take priority.
-1. Check a specified config file next.
-1. Drop back to a coded default.
-1. Optionally ignore environment variable overrides.
+``` ini
+[SITE]
+title = Sample Site
 
-By ignoring environment variables, this also doubles as a *very simple ```.ini``` file loader*.
+[NETWORK]
+hostname = localhost
+port     = 8080
+```
+
+Previously this allowed overrides by environment variables. The environment is no longer checked.
 
 ## How to use it
 
-The idea is that you should be exact about things
-that must change for a named environment, but
-also degrade to more general defaults whose values
-are shared across multiple environments.
+An example follows below, but in brief:
 
-For example your database connection strings and secret
-keys might be in environment variables in your cloud,
-whereas a standard list page size could be in a config
-file (for all environments) which is then overridden by
-a more specific value in an environment variable if needed.
+1. Create a file of settings. Whilst the name is unimportant, it is similar enough to an ```ini``` file to be worth using that extention.
+
+2. Use sections to group together related settings.
+
+3. Use ```simples-config``` to acces by individual setting or a section at a time.
 
 ## Code example
 
@@ -42,72 +42,56 @@ import (
 )
 
 func main() {
-    // Create a config object from an env file.
-    c, err := simples.CreateConfig(".env")
+    // Create a config object from an ini file.
+    c, err := simples.CreateConfig("settings.ini")
     if err != nil {
         log.Fatalln(err.Error())
     }
 
     // Extract the values (with defaults).
-    valueAsString := c.Get("PROJECT_TITLE", "Unnamed Project")
-    valueAsNumber := c.GetNumber("PAGE_SIZE", 10)
+    vs := c.GetString("NETWORK", "DomainName" "localhost")
+    vn := c.GetNumber("NETWORK", "Port", 10)
 
     // Show the results.
-    fmt.Println("Project:", valueAsString)
-    fmt.Println("Page Size:", valueAsNumber)
+    fmt.Println("Domain:", vs)
+    fmt.Println("Port:", vn)
 }
 ```
 
-Getting a value will always fall back to the default
-if a real value cannot be found (or ```getNumber```
-cannot convert that value to a number). Therefore
-there is no need to check for errors.
+Getting a value will always fall back to the default if a real value cannot be found (or ```getNumber``` cannot convert that value to a number).
+Therefore there is no need to check for errors.
 
 ## Configuration file format
 
 The file is expected to follow an extremely simple
-format and layout. Setting names may as well be in
-capitals as they are treated as such anyway; values
+format and layout. Section and setting keys are always compared without regard to casing; values
 are trimmed but otherwise untouched.
 
 ``` ini
+# Without a section, these go under DEFAULT.
 MODE          = Production
-DB_CONN       = my-long-winded-connection-string:27017
 PAGE_SIZE     = 10
 PROJECT_TITLE = My Example Project
 
-# Shows at the top of the web page.
-BANNER        = Version 2 has been released!
+[DATABASE]
+MONGODB       = my-long-winded-connection-string:27017
+USERNAME      = site_user
+
+# You can fetch sections with a sequence, allowing
+# the ordering here to be replicated in your code.
+[MENU]
+Home         = /home.html
+About Me     = /about.html
 ```
 
-Your setting name is first. This is followed by one
-or more whitespace characters (which are ignored),
-then an *equals* delimiter.
-The remainder of the line forms the value, which
-has leading/trailing whitespace removed and can
-include *equals* too.
-
-Lining up (as in the example above) is entirely
-optional, as are comments - which are lines that
-start with a hash symbol.
-
-## Environment variables
-
-Standard stuff. If you provide one, it overrides
-any loaded configuration file value with the same
-name (case insensitive).
-
-**Mac/Linux:**
-
-``` sh
-export PROJECT_TITLE=Website
-```
-
-**Windows:**
-
-``` sh
-set PROJECT_TITLE=Website
-```
+* Entries are added to a ```DEFAULT``` section until an actual named section is reached.
+* Lines enclosed in ```[]``` provide section names for all following lines until another section is declared.
+* Section and key names are *not* treated as case-sensitive for comparison/lookup purposes.
+* Everything to the left of the first ```=``` symbol is the key (though it *is* trimmed).
+* Everything to the right of the first ```=``` symbol is the value (though it *is* trimmed). This may also include further ```=``` symbols, which are then treated exactly as per any other character.
+* Indentation is irrelevant, as is line-spacing.
+* Lines starting with a hash (```#```) symbol are comments; these are ignored.
+* A duplicate section's entries will be appended to the existing section.
 
 ## Methods available
 
@@ -117,55 +101,56 @@ set PROJECT_TITLE=Website
 CreateConfig(filename string) (Config, error)
 ```
 
-This reads in the given filename and caches all
-settings found. It returns an error if the
-file could not be loaded. Any lines that are
-not key/value pairs are ignored.
+This reads in the given filename. It returns an error if the file could not be loaded. Any lines that are not key/value pairs are ignored.
 
 The main return object is a ```Config``` which
 has the following methods available on it.
 
-### Get
+### GetString
 
 ``` go
-Get(key string, defaultValue string) string
+GetString(section, key string, defaultValue string) string
 ```
 
-This returns the given key's value from the
-environment variable if it exists. Otherwise
-it will return from the loaded configuration
-file or drop back to returning the default.
+This returns the given section's key's value from the from the loaded configuration file, or the default value.
 
 ### GetNumber
 
 ``` go
-GetNumber(key string, defaultValue int) int
+GetNumber(section, key string, defaultValue int) int
 ```
 
-This works the same as ```Get``` but expects
+This works the same as ```GetString``` but expects
 to find a number value. If the value is not
 convertible to a number, the default is
 returned. *Note that by number I mean integer, so
 whole numbers only.*
 
-### SetAllowEnvironmentOverrides
+### GetSections
 
 ``` go
-SetAllowEnvironmentOverrides(allow bool)
+GetSections() []string
 ```
 
-The default behaviour is as if this were called with *true*. If you set it to
-*false* then *only* the loaded configuration
-file will be checked. Any environment variable
-override will be ignored.
+Returns a slice with the names of all known sections. Useful for keying into sections dynamically.
 
-By setting this to *false* you in effect gain
-the ability to treat the configuration file
-as a simple ```.ini``` file (or equivalent)
-without the need of an alternative package
-to read and parse it. (This does not, however,
-imply that the use of sections is supported
-like with normal ```.ini``` files.)
+### GetSection
+
+``` go
+GetSection(section string)  map[int]Entry
+```
+
+Returns a slice with all known sections. Useful for keying into sections dynamically. Each entry has it's own sequence within in, which matches the sequence in the original ```ini```file. Items are also indexed by their sequence, and so should always be accessed similar to:
+
+``` go
+cnt := len(m)
+for i := 1; i <= cnt; i++ {
+  e := m[i]
+  fmt.Println(i, e.Key, e.Value)
+}
+```
+
+In Go simply iterating over the collection *does not* result in a guaranteed order.
 
 ## Fetching and running tests
 
@@ -177,18 +162,8 @@ cd $GOPATH/src/github.com/kcartlidge/simples-config
 go test
 ```
 
-The ```cd``` command above will work in most cases. If not, replace it's parameter with the folder path the package was fetched into.
-
 ## Performance and cacheing
 
-Environment variables are *not cached*; whenever a
-setting is requested whose value derives from an
-environment variable the *current live value* is returned.
-
-Configuration file settings *are cached*, and will
-always reflect the *value at launch*.
-
-As file settings are cached, performance is not
-impacted by where the setting comes from.
+Configuration file settings *are cached*, and will always reflect the *value at launch*.
 
 Copyright: **K Cartlidge** | License: **MIT**
