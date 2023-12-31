@@ -25,6 +25,9 @@ func loadKeyValues(filename string) (Sections, error) {
 			if strings.HasPrefix(line, "#") {
 				continue
 			}
+			if strings.HasPrefix(line, ";") {
+				continue
+			}
 			kv := strings.SplitN(line, "=", 2)
 			if len(kv) == 1 {
 				if strings.HasPrefix(kv[0], "[") && strings.HasSuffix(kv[0], "]") {
