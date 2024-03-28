@@ -1,4 +1,4 @@
-module kcartlidge/simples
+module github.com/kcartlidge/simples/v2
 
 go 1.21.1
 

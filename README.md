@@ -1,4 +1,4 @@
-# Simples-Config v1.0.0
+# Simples v2.0.0
 
 An easy to use configuration loader that understands sections of settings in an `ini` style format:
 
@@ -17,14 +17,14 @@ An example follows below, but in brief:
 
 - Create a file of settings - whilst the name is unimportant, it is similar enough to an `ini` file to be worth using that file extention (and a related plugin for your editor)
 - Use sections to group together related settings
-- Use `simples-config` to access by individual setting or a section at a time
+- Use `simples` to access by individual setting or a section at a time
 
 ## Code example
 
 Install the package first:
 
 ``` sh
-go get github.com/kcartlidge/simples-config
+go get github.com/kcartlidge/simples/v2
 ```
 
 Then use like this:
@@ -34,7 +34,7 @@ package main
 
 import (
     "log"
-    simples "github.com/kcartlidge/simples-config"
+    simples "github.com/kcartlidge/simples/v2"
 )
 
 func main() {
@@ -171,4 +171,4 @@ go test
 
 Configuration file settings *are cached*, and will always reflect the value *at launch*.
 
-Copyright 2017-2023, **K Cartlidge** | License: **MIT**
+Copyright 2017-2024, **K Cartlidge** | License: **MIT**
